@@ -1,6 +1,29 @@
+name: Market Sentinel Daily Analysis
+
+on:
+  schedule:
+    # Roda às 11:45 BRT (14:45 UTC) de Segunda a Sexta
+    - cron: '45 14 * * 1-5'
+  workflow_dispatch: # Permite rodar manualmente clicando no botão
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependências
+        run: |
+          pip install -r requirements.txt
+
       - name: Executar Agente Financeiro
         env:
-          # Aqui o GitHub pega o Secret e transforma em Variável de Ambiente
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
