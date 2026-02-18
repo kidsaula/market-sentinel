@@ -9,7 +9,7 @@ on:
     # 3. Almoço (13:00 BRT -> 16:00 UTC)
     - cron: '0 16 * * 1-5'
      # 14:30 BRT = 17:30 UTC
-    - cron: '30 17 * * 1-5'
+    - cron: '45 14 * * 1-5'
     # 4. Perto do fechamento (16:30 BRT -> 19:30 UTC) - Fechamento é 17:00 BRT
     - cron: '30 19 * * 1-5'
   workflow_dispatch:
