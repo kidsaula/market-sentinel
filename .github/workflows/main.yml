@@ -2,16 +2,17 @@ name: Market Sentinel Daily Analysis
 
 on:
   schedule:
-    # 1. Antes da abertura (09:00 BRT -> 12:00 UTC)
-    - cron: '0 12 * * 1-5'
-    # 2. 30 min após abertura (11:00 BRT -> 14:00 UTC) - Obs: Abertura EUA é 10:30 BRT
-    - cron: '0 14 * * 1-5'
-    # 3. Almoço (13:00 BRT -> 16:00 UTC)
-    - cron: '0 16 * * 1-5'
-     # 15:15 BRT = 17:30 UTC
-    - cron: '37 20 * * 1-5'
-    # 4. Perto do fechamento (16:30 BRT -> 19:30 UTC) - Fechamento é 17:00 BRT
-    - cron: '30 19 * * 1-5'
+  # Antes da abertura (09:00 NY → 11:00 BRT)
+  - cron: '0 14 * * 1-5'
+
+  # 15 min após abertura (09:45 NY → 11:45 BRT)
+  - cron: '45 14 * * 1-5'
+
+  # Horário do almoço (12:00 NY → 14:00 BRT)
+  - cron: '0 17 * * 1-5'
+
+  # Final da tarde (17:00 NY → 19:00 BRT)
+  - cron: '0 22 * * 1-5'
   workflow_dispatch:
 
 jobs:
