@@ -2,13 +2,13 @@ name: Market Sentinel Daily Analysis
 
 on:
   schedule:
-  - cron: '0 13 * * *' # 10:00 BRT (Todos os dias)
+  - cron: '44 13 * * *' # 10:44 BRT (10:44 + 3h = 13:44 UTC)
   
-  - cron: '0 14 * * *' # 11:00 BRT (Todos os dias)
+  - cron: '39 14 * * *' # 11:39 BRT (11:39 + 3h = 14:39 UTC)
   
-  - cron: '0 18 * * *' # 15:00 BRT (Todos os dias)
+  - cron: '07 18 * * *' # 15:07 BRT (15:07 + 3h = 18:07 UTC)
   
-  - cron: '0 21 * * *' # 18:00 BRT (Todos os dias)
+  - cron: '33 20 * * *' # 17:33 BRT (17:33 + 3h = 20:33 UTC)
 
   workflow_dispatch:
 
