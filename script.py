@@ -111,9 +111,9 @@ INSTRUÇÃO DE CONTEXTO:
 4) Compare o contexto de notícias com os dados técnicos.
 
 REGRAS OBRIGATÓRIAS:
-- Use os dados técnicos para formar uma base.
 - Considere o contexto de notícias e sentimento de mercado como suporte ou impedimento ao veredito.
-- Limite sua resposta a no máximo 3 frases.
+- Liste a fonte de notícias que você usou como base.
+- Limite sua resposta a no máximo 4 frases.
 
 TAREFA:
 Dê o VEREDITO: [COMPRA FORTE / COMPRA FRACA / AGUARDAR / VENDA FRACA / VENDA FORTE]
