@@ -2,9 +2,8 @@ name: Market Sentinel Daily Analysis
 
 on:
   schedule:
-  # Roda a cada 3 horas, das 09:00 UTC (06:00 BRT) até as 21:00 UTC (18:00 BRT)
-    - cron: '0 9-21/3 * * *'
-
+    # Roda a cada 3 horas, das 09h às 21h UTC, apenas de SEGUNDA a SEXTA (1-5)
+    - cron: '0 9-21/3 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -13,6 +12,9 @@ jobs:
     steps:
       - name: Baixar código do repositório
         uses: actions/checkout@v4
+        with:
+          ref: main # <--- Isso força o uso do código mais recente da main
+          fetch-depth: 0 # Opcional: baixa todo o histórico se precisar de logs de commit
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -21,6 +23,7 @@ jobs:
 
       - name: Instalar dependências
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Executar Agente Financeiro
