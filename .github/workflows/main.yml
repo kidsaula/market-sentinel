@@ -2,33 +2,51 @@ name: Market Sentinel Daily Analysis
 
 on:
   schedule:
-    # Roda a cada 4 horas, das 09h às 21h UTC, apenas de SEGUNDA a SEXTA (1-5)
     - cron: '0 9-21/4 * * 1-5'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Permissões necessárias para salvar o users.json de volta no repositório
+    permissions:
+      contents: write 
+
     steps:
       - name: Baixar código do repositório
         uses: actions/checkout@v4
         with:
-          ref: main # <--- Isso força o uso do código mais recente da main
-          fetch-depth: 0 # Opcional: baixa todo o histórico se precisar de logs de commit
+          ref: main
 
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Instalar dependências
+      - name: Instalar dependências e ferramentas de segurança
         run: |
           python -m pip install --upgrade pip
+          # Garanta que todas as novas libs (pandas, yfinance, groq, pytz) estejam no requirements.txt
           pip install -r requirements.txt
+          pip install pip-audit bandit
 
-      - name: Executar Agente Financeiro
+      - name: Segurança - Auditoria de Dependências (pip-audit)
+        run: pip-audit
+
+      - name: Segurança - Análise Estática de Código (Bandit)
+        run: bandit -r . -ll
+
+      - name: Executar Agente Financeiro (Orquestrador)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python script.py
+          # O CHAT_ID agora é lido do users.json, mas mantemos o secret se quiser um admin fixo
+        run: python main.py
+
+      - name: Salvar novos usuários (Git Commit)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add users.json
+          git commit -m "🤖 auto: atualizando lista de usuários [skip ci]" || echo "Sem mudanças no users.json"
+          git push

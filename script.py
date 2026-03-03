@@ -7,6 +7,41 @@ from dotenv import load_dotenv
 from datetime import datetime
 import pytz
 
+import json
+
+USERS_FILE = "users.json"
+
+def load_users():
+    try:
+        with open(USERS_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return []
+
+def save_user(chat_id):
+    users = load_users()
+    if chat_id not in users:
+        users.append(chat_id)
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f)
+        print(f"✅ Novo usuário salvo: {chat_id}")
+
+
+
+def check_new_users():
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates"
+    response = requests.get(url, timeout=10).json()
+
+
+    for result in response.get("result", []):
+        message = result.get("message")
+        if message:
+            chat_id = message["chat"]["id"]
+            text = message.get("text", "")
+
+            if text == "/start":
+                save_user(chat_id)
+
 # ===============================
 # CONFIGURAÇÕES
 # ===============================
@@ -136,22 +171,26 @@ ESTRUTURA DA RESPOSTA:
 # TELEGRAM
 # ===============================
 def send_telegram(message):
+    users = load_users()
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": message,
-        "parse_mode": "Markdown"
-    }
 
-    try:
-        requests.post(url, json=payload, timeout=10).raise_for_status()
-        print("📨 Enviado com sucesso.")
-    except Exception as e:
-        print(f"❌ Erro Telegram: {e}")
+    for chat_id in users:
+        payload = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "Markdown"
+        }
+
+        try:
+            requests.post(url, json=payload, timeout=10)
+            print(f"📨 Enviado para {chat_id}")
+        except Exception as e:
+            print(f"❌ Erro para {chat_id}: {e}")
 
 # ===============================
 # EXECUÇÃO
 # ===============================
+check_new_users()
 print(f"🚀 Iniciando monitoramento de {len(WATCHLIST)} ativos...")
 
 for ticker in WATCHLIST:
