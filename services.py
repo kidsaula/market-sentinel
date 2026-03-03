@@ -22,15 +22,42 @@ def get_market_data(ticker):
 
 def get_ai_analysis(data):
     client = Groq(api_key=GROQ_API_KEY)
-    prompt = f"Analise o sentimento de {data['ticker']}... RSI: {data['rsi']}, Score: {data['asymmetry_score']}" # Resumido
     
+    # Restaurando o prompt original rigoroso
+    prompt = f"""
+Você é um especialista em psicologia de mercado e análise de fluxo (order flow). Sua missão é decifrar o "fear & greed" (medo e ganância) sobre o ativo {data['ticker']}.
+
+DADOS TÉCNICOS ATUAIS:
+- Preço: ${data['price']:.2f} ({data['change']:+.2f}%)
+- RSI: {data['rsi']} (Sobrecompra >70 / Sobrevenda <30)
+- Score de Assimetria: {data['asymmetry_score']}
+
+INSTRUÇÕES DE ANÁLISE DE SENTIMENTO:
+1) Identifique se o mercado está em estado de FOMO (euforia), Pânico, ou Fadiga.
+2) Analise como o investidor humano médio está reagindo ao nível de preço atual: há resistência psicológica ou aceitação de alta?
+3) Projete a durabilidade desse sentimento (ex: "exaustão de curto prazo" ou "tendência de manada sustentada").
+
+REGRAS DE RESPOSTA:
+- Use um tom direto, focado no comportamento dos players.
+- OBRIGATÓRIO: Liste ao final as fontes de dados consultadas (ex: Yahoo Finance, Bloomberg, Reuters, Sentiment Analysis Tools).
+- Idioma: Português.
+
+ESTRUTURA DA RESPOSTA:
+- VEREDITO: [Status]
+- ANÁLISE DE SENTIMENTO: [Máximo 3 frases focadas no fator humano e duração do viés]
+- FONTES: [Lista de sites/terminais consultados]
+"""
+
     completion = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[{"role": "system", "content": "Analista de sentimento profissional."},
-                  {"role": "user", "content": prompt}],
+        messages=[
+            {"role": "system", "content": "Você é um analista de sentimento de mercado focado no comportamento humano e fluxos institucionais."},
+            {"role": "user", "content": prompt}
+        ],
         temperature=0.5
     )
     return completion.choices[0].message.content.strip()
+
 
 def send_single_message(chat_id, message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"

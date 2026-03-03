@@ -18,7 +18,7 @@ def save_user(chat_id):
         print(f"✅ Novo usuário salvo: {chat_id}")
 
 def check_new_users():
-    url = f"https://api.telegram.org{TELEGRAM_TOKEN}/getUpdates"
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates"
     
     try:
         response = requests.get(url, timeout=15).json()
