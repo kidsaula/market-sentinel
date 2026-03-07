@@ -8,7 +8,5 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 USERS_FILE = "users.json"
 
 WATCHLIST = [
-    "NVDA", "AMD", "AVGO", "TSM", "MSFT", "GOOGL", 
-    "AMZN", "META", "PLTR", "AI", "SOUN", "BBAI", 
-    "ORCL", "IBM", "SNOW"
+    "NVDA", "TSLA", "AVGO", "MU", "MRVL"
 ]
