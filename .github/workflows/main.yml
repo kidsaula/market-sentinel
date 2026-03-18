@@ -22,6 +22,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
 
       - name: Instalar dependências e ferramentas de segurança
         run: |
@@ -41,7 +42,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           # O CHAT_ID agora é lido do users.json, mas mantemos o secret se quiser um admin fixo
-        run: python main.py
+        run: python main.py --mode report
 
       - name: Salvar novos usuários (Git Commit)
         run: |
