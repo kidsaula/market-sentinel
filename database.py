@@ -1,6 +1,7 @@
 import json
 import requests
-from config import TELEGRAM_TOKEN, USERS_FILE
+from datetime import datetime, timezone, timedelta
+from config import TELEGRAM_TOKEN, USERS_FILE, NEWS_LOG_FILE
 
 def load_users():
     try:
@@ -16,6 +17,27 @@ def save_user(chat_id):
         with open(USERS_FILE, "w") as f:
             json.dump(users, f)
         print(f"✅ Novo usuário salvo: {chat_id}")
+
+def load_news_log(max_days=7):
+    """Carrega UUIDs vistos, descartando entradas mais antigas que max_days."""
+    try:
+        with open(NEWS_LOG_FILE, "r") as f:
+            data = json.load(f)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=max_days)
+        active = {
+            uuid: ts for uuid, ts in data.items()
+            if datetime.fromisoformat(ts) > cutoff
+        }
+        return active
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_news_log(log: dict, new_ids: set):
+    """Adiciona novos UUIDs com timestamp atual e persiste."""
+    now = datetime.now(timezone.utc).isoformat()
+    log.update({uuid: now for uuid in new_ids})
+    with open(NEWS_LOG_FILE, "w") as f:
+        json.dump(log, f)
 
 def check_new_users():
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates"

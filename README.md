@@ -1,17 +1,26 @@
 # 📡 Market Sentinel
 
-Bot de análise financeira automatizado que monitora ativos da bolsa americana, calcula indicadores técnicos, gera análise de sentimento via IA e envia os resultados pelo Telegram.
+Bot de análise financeira automatizado que monitora ativos da bolsa americana em dois modos independentes: **análise técnica com IA** e **monitoramento de notícias em tempo real**, ambos entregues via Telegram.
 
 ---
 
-## Como funciona
+## Modos de execução
 
-O fluxo completo roda automaticamente via GitHub Actions:
+O `main.py` aceita o argumento `--mode` para selecionar o fluxo:
+
+```bash
+python main.py --mode report   # Análise técnica (padrão)
+python main.py --mode news     # Monitoramento de notícias
+```
+
+---
+
+## Modo `report` — Análise Técnica
 
 ```
-GitHub Actions (agendado)
+GitHub Actions (a cada 4h, dias úteis)
         ↓
-  main.py (orquestrador)
+  main.py --mode report
         ↓
   services.py → busca dados de mercado (Yahoo Finance)
         ↓
@@ -24,11 +33,7 @@ GitHub Actions (agendado)
   Telegram → envia relatório para todos os usuários
 ```
 
----
-
-## Indicadores calculados
-
-Para cada ativo da watchlist, o bot calcula:
+### Indicadores calculados
 
 | Indicador | Descrição |
 |---|---|
@@ -47,19 +52,15 @@ Para cada ativo da watchlist, o bot calcula:
 | > -0.40 | 🔴 VENDA FRACA |
 | ≤ -0.40 | 🔥 VENDA FORTE |
 
----
+### Análise de IA (modo report)
 
-## Análise de IA
-
-Após os cálculos técnicos, os dados são enviados ao modelo **LLaMA 3.3 70B** (via Groq) com um prompt especializado em psicologia de mercado. A IA retorna:
+Os dados técnicos são enviados ao **LLaMA 3.3 70B** (via Groq) com um prompt especializado em psicologia de mercado. A IA retorna:
 
 - **Veredito** — estado atual do mercado (FOMO, Pânico, Fadiga)
 - **Análise de Sentimento** — como o investidor médio está reagindo e a durabilidade do viés
 - **Fontes** — referências consultadas
 
----
-
-## Exemplo de mensagem enviada no Telegram
+### Exemplo de mensagem (report)
 
 ```
 📊 ATIVO: NVDA
@@ -76,21 +77,73 @@ FONTES: Yahoo Finance, ...
 
 ---
 
+## Modo `news` — Sentinel News
+
+```
+GitHub Actions (a cada 30min, dias úteis)
+        ↓
+  main.py --mode news
+        ↓
+  services.py → busca notícias via yfinance (.news)
+        ↓
+  database.py → filtra UUIDs já vistos (news_log.json)
+        ↓
+  analysis.py → consenso geral da IA sobre todas as notícias novas do ticker
+        ↓
+  Se impacto ALTO → Telegram → alerta consolidado com links
+        ↓
+  database.py → salva novos UUIDs no news_log.json
+```
+
+### Como funciona o filtro anti-spam
+
+- Cada notícia possui um UUID único fornecido pelo Yahoo Finance
+- O arquivo `news_log.json` armazena `{ "uuid": "timestamp_iso" }` de todas as notícias já processadas
+- Na próxima execução, notícias com UUID já registrado são ignoradas
+- Entradas com mais de **7 dias** são descartadas automaticamente, mantendo o arquivo enxuto
+
+### Classificação de impacto
+
+Todos os títulos novos de um ticker são enviados juntos ao LLaMA em **uma única chamada**, que retorna:
+
+- **IMPACTO** — `ALTO`, `MÉDIO` ou `BAIXO` para o conjunto de notícias
+- **CONSENSO** — 2 a 3 frases resumindo o sentimento geral e o que o investidor deve observar
+
+O alerta no Telegram só é disparado se o impacto consolidado for **ALTO**.
+
+### Exemplo de mensagem (news)
+
+```
+🚨 ALERTA DE NOTÍCIAS — NVDA
+
+⚡ Impacto Geral: ALTO
+🧠 Consenso IA: Jensen Huang reforçou projeções bilionárias para os próximos anos...
+
+📰 Notícias (3):
+• [Nvidia CEO Huang says company sees more than $1 trillion...](link)
+• [Nvidia's Jensen Huang Just Made a Startling Prediction...](link)
+• [Wall Street has a stark message for Nvidia investors](link)
+```
+
+---
+
 ## Estrutura do projeto
 
 ```
 market-sentinel/
-├── main.py          # Orquestrador — roda a análise em paralelo para todos os tickers
-├── analysis.py      # Cálculos técnicos: RSI, Score de Assimetria, Veredito
-├── services.py      # Integrações externas: Yahoo Finance, Groq (IA), Telegram
-├── database.py      # Gerenciamento de usuários inscritos (users.json)
-├── config.py        # Configurações: chaves de API, watchlist
-├── script.py        # Versão monolítica original (legado)
-├── users.json       # Lista de chat_ids dos usuários inscritos no bot
-├── requirements.txt # Dependências Python
+├── main.py           # Orquestrador — argparse com --mode report | news
+├── analysis.py       # RSI, Score de Assimetria, Veredito, Consenso de Notícias (IA)
+├── services.py       # Yahoo Finance (dados + notícias), Groq (IA), Telegram
+├── database.py       # Usuários (users.json) e log de notícias (news_log.json)
+├── config.py         # Chaves de API, watchlist, caminhos de arquivos
+├── script.py         # Versão monolítica original (legado — não utilizado na automação)
+├── users.json        # Lista de chat_ids dos usuários inscritos
+├── news_log.json     # UUIDs das notícias já processadas com timestamps
+├── requirements.txt  # Dependências Python
 └── .github/
     └── workflows/
-        └── main.yml # Pipeline GitHub Actions (agendamento + segurança)
+        ├── main.yml          # Pipeline do modo report (a cada 4h)
+        └── news_sentinel.yml # Pipeline do modo news (a cada 30min)
 ```
 
 ---
@@ -107,18 +160,28 @@ Editável em `config.py`.
 
 ## Automação (GitHub Actions)
 
-O workflow em `.github/workflows/main.yml` executa:
+### `main.yml` — Análise Técnica
 
-1. **Agendamento** — roda de segunda a sexta, a cada 4 horas entre 9h e 21h UTC (`cron: '0 9-21/4 * * 1-5'`)
-2. **Auditoria de segurança** — `pip-audit` (vulnerabilidades nas dependências) e `bandit` (análise estática do código)
-3. **Execução** — roda `main.py`
-4. **Persistência** — faz commit automático do `users.json` atualizado de volta ao repositório
+| Etapa | Descrição |
+|---|---|
+| Agendamento | Segunda a sexta, a cada 4h entre 9h e 21h UTC |
+| Segurança | `pip-audit` + `bandit` a cada execução |
+| Execução | `python main.py --mode report` |
+| Persistência | Commit automático do `users.json` atualizado |
+
+### `news_sentinel.yml` — Sentinel News
+
+| Etapa | Descrição |
+|---|---|
+| Agendamento | Segunda a sexta, a cada 30min entre 9h e 21h UTC |
+| Execução | `python main.py --mode news` |
+| Persistência | Commit automático do `news_log.json` atualizado |
 
 ---
 
 ## Como inscrever um usuário
 
-O usuário precisa enviar `/start` para o bot no Telegram. O bot detecta a mensagem via `getUpdates` e salva o `chat_id` no `users.json` automaticamente.
+O usuário envia `/start` para o bot no Telegram. O bot detecta via `getUpdates` e salva o `chat_id` no `users.json` automaticamente — isso ocorre no início de cada execução do modo `report`, via `check_new_users()` em `database.py`.
 
 ---
 
@@ -131,7 +194,7 @@ GROQ_API_KEY=sua_chave_groq
 TELEGRAM_TOKEN=token_do_seu_bot
 ```
 
-### 2. Secrets no GitHub (para o Actions)
+### 2. Secrets no GitHub
 
 | Secret | Descrição |
 |---|---|
@@ -147,7 +210,8 @@ pip install -r requirements.txt
 ### 4. Rodar localmente
 
 ```bash
-python main.py
+python main.py --mode report
+python main.py --mode news
 ```
 
 ---
@@ -156,7 +220,7 @@ python main.py
 
 | Biblioteca | Uso |
 |---|---|
-| `yfinance` | Dados de mercado (preço, histórico, 52w high) |
+| `yfinance` | Dados de mercado e notícias (preço, histórico, 52w high, `.news`) |
 | `groq` | Cliente da API Groq para o modelo LLaMA |
 | `requests` | Chamadas à API do Telegram |
 | `pandas` | Cálculos de séries temporais (RSI, SMA) |

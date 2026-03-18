@@ -4,6 +4,29 @@ from groq import Groq
 from config import TELEGRAM_TOKEN, GROQ_API_KEY
 from concurrent.futures import ThreadPoolExecutor
 
+def fetch_news(ticker):
+    """
+    Retorna lista de notícias do ticker via yfinance.
+    Cada item: {"uuid": str, "title": str, "link": str}
+    Compatível com a nova estrutura aninhada em item['content'].
+    """
+    stock = yf.Ticker(ticker)
+    raw = stock.news or []
+    results = []
+    for item in raw:
+        # Nova estrutura: dados dentro de item['content']
+        content = item.get("content") or item
+        uuid = content.get("id") or item.get("id", "")
+        title = content.get("title", "")
+        link = (
+            content.get("canonicalUrl", {}).get("url")
+            or content.get("clickThroughUrl", {}).get("url")
+            or item.get("link", "")
+        )
+        if title:
+            results.append({"uuid": uuid, "title": title, "link": link})
+    return results
+
 def get_market_data(ticker):
     stock = yf.Ticker(ticker)
     hist = stock.history(period="60d")
