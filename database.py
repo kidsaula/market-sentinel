@@ -23,12 +23,14 @@ def load_news_log(max_days=7):
     try:
         with open(NEWS_LOG_FILE, "r") as f:
             data = json.load(f)
+        # Compatibilidade com formato antigo (lista de UUIDs sem timestamp)
+        if isinstance(data, list):
+            return {}
         cutoff = datetime.now(timezone.utc) - timedelta(days=max_days)
-        active = {
+        return {
             uuid: ts for uuid, ts in data.items()
             if datetime.fromisoformat(ts) > cutoff
         }
-        return active
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
