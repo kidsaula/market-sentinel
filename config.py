@@ -9,5 +9,7 @@ USERS_FILE = "users.json"
 NEWS_LOG_FILE = "news_log.json"
 
 WATCHLIST = [
-    "NVDA", "TSLA", "AMZN", "AAPL", "PLTR"
+    "NVDA", "TSLA", "AAPL", "PLTR", "AMD", 
+    "INTC", "GOOGL", "META", "TSM", "GOOG",
+    "MU", "SNDK"
 ]
